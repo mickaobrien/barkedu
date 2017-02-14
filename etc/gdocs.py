@@ -1,9 +1,24 @@
 #!/usr/bin/env python
 
 from exceptions import KeyError
+import httplib2
 import os
 
+import oauth2client
+from oauth2client import client, tools
 import requests
+
+#TODO move to config
+SCOPES = 'https://www.googleapis.com/auth/drive'
+CLIENT_SECRET_FILE = 'client_secret.json'
+APPLICATION_NAME = 'Bike Crashes'
+
+try:
+    import argparse
+    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+except ImportError:
+    flags = None
+
 
 class GoogleDoc(object):
     """
@@ -44,6 +59,7 @@ class GoogleDoc(object):
         Because sometimes, just sometimes, you need to update the class when you instantiate it.
         In this case, we need, minimally, a document key.
         """
+        self.service = self._create_service()
         if kwargs:
             if kwargs.items():
                 for key, value in kwargs.items():
@@ -68,32 +84,57 @@ class GoogleDoc(object):
 
             self.auth = r.content.split('\n')[2].split('Auth=')[1]
 
+    def get_credentials(self):
+        """Gets valid user credentials from storage.
+
+        If nothing has been stored, or if the stored credentials are invalid,
+        the OAuth2 flow is completed to obtain the new credentials.
+
+        Returns:
+            Credentials, the obtained credential.
+        """
+        home_dir = os.path.expanduser('~')
+        credential_dir = os.path.join(home_dir, '.credentials')
+        if not os.path.exists(credential_dir):
+            os.makedirs(credential_dir)
+        credential_path = os.path.join(credential_dir,
+                                       'drive-quickstart.json')
+
+        store = oauth2client.file.Storage(credential_path)
+        credentials = store.get()
+        if not credentials or credentials.invalid:
+            flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+            flow.user_agent = APPLICATION_NAME
+            if flags:
+                credentials = tools.run_flow(flow, store, flags)
+            else:  # Needed only for compatability with Python 2.6
+                credentials = tools.run(flow, store)
+            print '='*40
+            print '  Storing credentials to ' + credential_path
+            print '='*40
+        return credentials
+
+    def _create_service(self):
+        credentials = self.get_credentials()
+        http = credentials.authorize(httplib2.Http())
+        service = discovery.build('drive', 'v2', http=http)
+        return service
+
     def get_document(self):
-        """
-        Uses the authentication token to fetch a google doc.
-        """
-
         # Handle basically all the things that can go wrong.
-        if not self.auth:
-            raise KeyError("Error! You didn't get an auth token. Something very bad happened. File a bug?")
-        elif not self.key:
-            raise KeyError("Error! You forgot to pass a key to the class.")
-        else:
-            headers = {}
-            headers['Authorization'] = "GoogleLogin auth=%s" % self.auth
+        if not self.key:
+            raise KeyError('Error! You forgot to pass a key to the class.')
+        service = self.service
+        url_params = { 'key': self.key, 'format': self.file_format, 'gid': self.gid }
+        url = self.spreadsheet_url % url_params
+        print 'Downloading {}'.format(url)
+        resp, content = service._http.request(url)
 
-            url_params = { 'key': self.key, 'format': self.file_format, 'gid': self.gid }
-            url = self.spreadsheet_url % url_params
+        if resp.status != 200:
+            resp, content = service._http.request(url)
 
-            r = requests.get(url, headers=headers)
+        if resp.status != 200:
+            raise Exception('No good')
 
-            if r.status_code != 200:
-                url = self.new_spreadsheet_url % url_params
-                r = requests.get(url, headers=headers)
-
-            if r.status_code != 200:
-                raise KeyError("Error! Your Google Doc does not exist.")
-
-            with open('data/%s.%s' % (self.file_name, self.file_format), 'wb') as writefile:
-                writefile.write(r.content)
-
+        with open('data/%s.%s' % (self.file_name, self.file_format), 'wb') as writefile:
+            writefile.write(r.content)

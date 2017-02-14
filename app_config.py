@@ -94,7 +94,7 @@ DEBUG = True
 """
 COPY EDITING
 """
-COPY_GOOGLE_DOC_URL = 'https://docs.google.com/spreadsheet/ccc?key=0AqjLQISCZzBkdGp1VGEzQ1gyRXJmMVlXRGRoVEtBZVE'
+COPY_GOOGLE_DOC_URL = 'https://docs.google.com/spreadsheet/ccc?key=1pHK47XG0beP8rRfaKMcyj2luci2hgI-GUm6knFDc3_I'
 COPY_PATH = 'data/copy.xlsx'
 
 """
