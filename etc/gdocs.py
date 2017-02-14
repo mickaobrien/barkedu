@@ -86,6 +86,28 @@ class GoogleDoc(object):
 
             self.auth = r.content.split('\n')[2].split('Auth=')[1]
 
+    def _load_credentials(self):
+        home_dir = os.path.expanduser('~')
+        credential_dir = os.path.join(home_dir, '.credentials')
+        if not os.path.exists(credential_dir):
+            os.makedirs(credential_dir)
+        credential_path = os.path.join(credential_dir,
+                                       'drive-quickstart.json')
+
+        store = oauth2client.file.Storage(credential_path)
+        return store.get()
+
+    def _update_credentials(self):
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow.user_agent = APPLICATION_NAME
+        if flags:
+            credentials = tools.run_flow(flow, store, flags)
+        else:  # Needed only for compatability with Python 2.6
+            credentials = tools.run(flow, store)
+        print '='*40
+        print '  Storing credentials to ' + credential_path
+        print '='*40
+
     def get_credentials(self):
         """Gets valid user credentials from storage.
 
@@ -95,25 +117,9 @@ class GoogleDoc(object):
         Returns:
             Credentials, the obtained credential.
         """
-        home_dir = os.path.expanduser('~')
-        credential_dir = os.path.join(home_dir, '.credentials')
-        if not os.path.exists(credential_dir):
-            os.makedirs(credential_dir)
-        credential_path = os.path.join(credential_dir,
-                                       'drive-quickstart.json')
-
-        store = oauth2client.file.Storage(credential_path)
-        credentials = store.get()
+        credentials = self._load_credentials()
         if not credentials or credentials.invalid:
-            flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-            flow.user_agent = APPLICATION_NAME
-            if flags:
-                credentials = tools.run_flow(flow, store, flags)
-            else:  # Needed only for compatability with Python 2.6
-                credentials = tools.run(flow, store)
-            print '='*40
-            print '  Storing credentials to ' + credential_path
-            print '='*40
+            credentials = self._update_credentials()
         return credentials
 
     def _create_service(self):
