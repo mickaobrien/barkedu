@@ -5,6 +5,7 @@ import httplib2
 import os
 
 import oauth2client
+from apiclient import discovery
 from oauth2client import client, tools
 import requests
 
@@ -13,11 +14,12 @@ SCOPES = 'https://www.googleapis.com/auth/drive'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Bike Crashes'
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+#TODO this doesn't work with fab...
+# try:
+    # import argparse
+    # flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+# except ImportError:
+    # flags = None
 
 
 class GoogleDoc(object):
@@ -137,4 +139,4 @@ class GoogleDoc(object):
             raise Exception('No good')
 
         with open('data/%s.%s' % (self.file_name, self.file_format), 'wb') as writefile:
-            writefile.write(r.content)
+            writefile.write(content)

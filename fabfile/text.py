@@ -26,6 +26,6 @@ def update():
         doc['key'] = bits[0]
 
         g = GoogleDoc(**doc)
-        g.get_auth()
+        # g.get_auth()
         g.get_document()
 
