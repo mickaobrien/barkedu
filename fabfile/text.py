@@ -21,11 +21,9 @@ def update():
     else:
         doc = {}
         url = app_config.COPY_GOOGLE_DOC_URL
-        bits = url.split('key=')
+        bits = url.split('id=')
         bits = bits[1].split('&')
         doc['key'] = bits[0]
 
         g = GoogleDoc(**doc)
-        # g.get_auth()
         g.get_document()
-

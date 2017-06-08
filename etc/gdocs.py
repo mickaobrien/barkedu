@@ -48,7 +48,7 @@ class GoogleDoc(object):
 
     # You can change these with kwargs but it's not recommended.
     spreadsheet_url = 'https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=%(key)s&exportFormat=%(format)s&gid=%(gid)s'
-    new_spreadsheet_url = 'https://docs.google.com/spreadsheets/d/%(key)s/export?format=%(format)s&id=%(key)s&gid=%(gid)s'
+    new_spreadsheet_url = 'https://docs.google.com/spreadsheets/d/%(key)s/export?format=%(format)s&id=%(key)s'
     auth = None
     email = os.environ.get('APPS_GOOGLE_EMAIL', None)
     password = os.environ.get('APPS_GOOGLE_PASS', None)
@@ -133,8 +133,8 @@ class GoogleDoc(object):
         if not self.key:
             raise KeyError('Error! You forgot to pass a key to the class.')
         service = self.service
-        url_params = { 'key': self.key, 'format': self.file_format, 'gid': self.gid }
-        url = self.spreadsheet_url % url_params
+        url_params = { 'key': self.key, 'format': self.file_format }
+        url = self.new_spreadsheet_url % url_params
         print 'Downloading {}'.format(url)
         resp, content = service._http.request(url)
 
