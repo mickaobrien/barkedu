@@ -78,7 +78,6 @@ var setUpFullPage = function() {
         loopHorizontal: false,
         afterRender: onPageLoad,
         afterSlideLoad: lazyLoad,
-        onSlideLeave: onSlideLeave
     });
 };
 
@@ -106,26 +105,6 @@ var lazyLoad = function(anchorLink, index, slideAnchor, slideIndex) {
 
     if (slideIndex === $slides.length - 1) {
         buildConclusionSlide();
-    }
-
-    // Completion tracking
-    how_far = (slideIndex + 1) / ($slides.length - 1);
-
-    if (how_far >= completion + 0.25) {
-        completion = how_far - (how_far % 0.25);
-
-        if (completion === 0.25) {
-            ANALYTICS.completeTwentyFivePercent(progressTest);
-        }
-        else if (completion === 0.5) {
-            ANALYTICS.completeFiftyPercent(progressTest);
-        }
-        else if (completion === 0.75) {
-            ANALYTICS.completeSeventyFivePercent(progressTest);
-        }
-        else if (completion === 1) {
-            ANALYTICS.completeOneHundredPercent(progressTest);
-        }
     }
 };
 
@@ -250,13 +229,7 @@ var getRandomInt = function(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var setCustomVars = function() {
-    ANALYTICS.setCustomVar(40, 'progress-test', progressTest);
-}
-
 var buildConclusionSlide = function() {
-    ANALYTICS.trackEvent('tests-run', conclusionTest);
-
     if (!presentedConclusion) {
         presentedConclusion = true;
         if (conclusionTest === 'no-question') {
@@ -277,10 +250,8 @@ var onCareStoryBtnClick = function(e) {
     $careStory.hide();
 
     if ($this.hasClass('yes')) {
-        ANALYTICS.trackEvent('like-story-yes', conclusionTest);
         $support.show();
     } else {
-        ANALYTICS.trackEvent('like-story-no', conclusionTest);
         $email.show();
     }
 }
@@ -291,14 +262,8 @@ var onSupportBtnClick = function(e) {
     var $this = $(this);
     var link = $this.attr('href');
 
-    ANALYTICS.trackEvent('support-btn-click', conclusionTest);
-
     window.top.location = link
     return true;
-}
-
-var onEmailBtnClick = function() {
-    ANALYTICS.trackEvent('email-btn-click', conclusionTest);
 }
 
 var animateProgress = function(index) {
@@ -313,23 +278,13 @@ var animateProgress = function(index) {
     }
 }
 
-var onSlideLeave = function(anchorLink, index, slideIndex, direction) {
-    /*
-    * Called when leaving a slide.
-    */
-    ANALYTICS.exitSlide(slideIndex.toString());
-}
-
 var onFirstRightArrowClick = function() {
     if (firstRightArrowClicked === false) {
-        ANALYTICS.firstRightArrowClick(arrowTest);
         firstRightArrowClicked = true;
     }
 }
 
 var onStartCardButtonClick = function() {
-    ANALYTICS.trackEvent('begin');
-
     $.fn.fullpage.moveSlideRight();
     if (isTouch) {
         AUDIO.fakeAmbientPlayer();
@@ -339,7 +294,6 @@ var onStartCardButtonClick = function() {
 
 var onDocumentKeyDown = function(e) {
     if (e.which === 37 || e.which === 39) {
-        ANALYTICS.useKeyboardNavigation();
         if (e.which === 37) {
             $.fn.fullpage.moveSlideLeft();
         } else if (e.which === 39) {
@@ -382,14 +336,11 @@ var rmFakeMobileHover = function() {
  */
 var onClippyCopy = function(e) {
     alert('Copied to your clipboard!');
-
-    ANALYTICS.copySummary();
 }
 
 var onControlBtnClick = function(e) {
     e.preventDefault();
     AUDIO.toggleNarrativeAudio();
-    ANALYTICS.trackEvent('pause-button');
 
     e.stopPropagation();
 }
@@ -412,30 +363,14 @@ var getHiddenProperty = function() {
 
     // otherwise it's not supported
     return null;
-}
+};
 
 var isHidden = function() {
     var prop = getHiddenProperty();
     if (!prop) return false;
 
     return document[prop];
-}
-
-
-/*
- * Share modal opened.
- */
-var onShareModalShown = function(e) {
-    ANALYTICS.openShareDiscuss();
-}
-
-/*
- * Share modal closed.
- */
-var onShareModalHidden = function(e) {
-    ANALYTICS.closeShareDiscuss();
-}
-
+};
 
 $(document).ready(function() {
     $w = $(window).width();
@@ -451,10 +386,10 @@ $(document).ready(function() {
     $narrativePlayer = $('#narrative-player');
     $ambientPlayer = $('#ambient-player');
     $share = $('.share');
-    $shareModal = $('#share-modal')
+    $shareModal = $('#share-modal');
     $progressIndicator = $('.progress-indicator');
     $currentProgress = $('.current-progress');
-    $support = $('.support')
+    $support = $('.support');
     $supportBtn = $('.support-btn');
     $careStory = $('.care-story');
     $question = $('.question');
@@ -466,8 +401,6 @@ $(document).ready(function() {
     progressTest = determineTest(['progress-bar', 'no-progress-bar']);
     conclusionTest = determineTest(['no-question', 'question_a', 'question_b', 'question_c', 'question_d']);
 
-    $shareModal.on('shown.bs.modal', onShareModalShown);
-    $shareModal.on('hidden.bs.modal', onShareModalHidden);
     $startCardButton.on('click', onStartCardButtonClick);
     $slides.on('click', onSlideClick);
     $controlBtn.on('click', onControlBtnClick);
@@ -475,14 +408,12 @@ $(document).ready(function() {
     $arrows.on('touchend', rmFakeMobileHover);
     $careStoryBtns.on('click', onCareStoryBtnClick);
     $supportBtn.on('click', onSupportBtnClick);
-    $emailBtn.on('click', onEmailBtnClick);
     $(document).keydown(onDocumentKeyDown);
 
     AUDIO.setUpNarrativePlayer();
     AUDIO.setUpAmbientPlayer();
     setUpFullPage();
     resize();
-    setCustomVars();
 
     // Redraw slides if the window resizes
     window.addEventListener("deviceorientation", resize, true);
